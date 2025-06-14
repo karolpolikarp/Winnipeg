@@ -1,0 +1,1186 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analiza rynku Airbnb w Winnipeg</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0a0a0a;
+            color: #eee;
+            overflow: hidden;
+        }
+        
+        .presentation-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(circle at 20% 80%, #1a1a1a 0%, #0a0a0a 100%);
+        }
+        
+        .slide {
+            position: absolute;
+            width: 92%;
+            max-width: 1400px;
+            min-height: 85vh;
+            background: linear-gradient(135deg, #1f1f1f 0%, #2a2a2a 100%);
+            border-radius: 25px;
+            padding: 80px;
+            box-shadow: 0 25px 80px rgba(0,0,0,0.7), 0 0 120px rgba(255, 107, 107, 0.05);
+            display: none;
+            animation: slideIn 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .slide.active {
+            display: block;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(150px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0) scale(1);
+            }
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .slide.active .content > * {
+            animation: fadeIn 0.8s ease-out forwards;
+            opacity: 0;
+        }
+        
+        .slide.active .content > *:nth-child(1) { animation-delay: 0.1s; }
+        .slide.active .content > *:nth-child(2) { animation-delay: 0.2s; }
+        .slide.active .content > *:nth-child(3) { animation-delay: 0.3s; }
+        .slide.active .content > *:nth-child(4) { animation-delay: 0.4s; }
+        
+        h1 {
+            font-size: 4em;
+            margin-bottom: 40px;
+            background: linear-gradient(45deg, #f39c12, #e74c3c, #c0392b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-align: center;
+            font-weight: 800;
+            letter-spacing: -1px;
+        }
+        
+        h2 {
+            font-size: 3em;
+            margin-bottom: 40px;
+            color: #ecf0f1;
+            text-align: center;
+            font-weight: 700;
+        }
+        
+        h3 {
+            font-size: 2em;
+            margin-bottom: 25px;
+            color: #bdc3c7;
+            font-weight: 600;
+        }
+        
+        .content {
+            font-size: 1.3em;
+            line-height: 1.8;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 35px;
+            margin: 50px 0;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 100%);
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255,255,255,0.1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(243, 156, 18, 0.1) 0%, transparent 70%);
+            transform: rotate(45deg);
+            transition: all 0.5s ease;
+            opacity: 0;
+        }
+        
+        .stat-card:hover::before {
+            opacity: 1;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(243, 156, 18, 0.2);
+            border-color: #f39c12;
+        }
+        
+        .stat-number {
+            font-size: 3em;
+            font-weight: bold;
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 15px;
+            letter-spacing: -1px;
+        }
+        
+        .stat-label {
+            color: #bbb;
+            font-size: 0.9em;
+            line-height: 1.4;
+        }
+        
+        .stat-sublabel {
+            color: #888;
+            font-size: 0.8em;
+            margin-top: 10px;
+            line-height: 1.3;
+        }
+        
+        .chart-container {
+            background: rgba(255,255,255,0.03);
+            padding: 30px;
+            border-radius: 15px;
+            margin: 25px 0;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        
+        .bar {
+            height: 35px;
+            background: linear-gradient(90deg, #f39c12, #e67e22);
+            margin: 15px 0;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .bar::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: left 0.5s ease;
+        }
+        
+        .bar:hover::after {
+            left: 100%;
+        }
+        
+        .bar:hover {
+            transform: scaleX(1.05);
+            box-shadow: 0 5px 20px rgba(243, 156, 18, 0.4);
+        }
+        
+        .bar-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.95em;
+            align-items: center;
+        }
+        
+        ul {
+            list-style: none;
+            padding-left: 0;
+        }
+        
+        li {
+            margin: 20px 0;
+            padding-left: 35px;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        
+        li:hover {
+            padding-left: 45px;
+        }
+        
+        li:before {
+            content: "▶";
+            position: absolute;
+            left: 0;
+            color: #4fbdba;
+            transition: all 0.3s ease;
+        }
+        
+        li:hover:before {
+            left: 10px;
+            color: #ff6b6b;
+        }
+        
+        .highlight {
+            background: linear-gradient(90deg, #e94560, #ff6b6b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: bold;
+        }
+        
+        .navigation {
+            position: fixed;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 25px;
+            z-index: 1000;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #4fbdba, #7ec8e3);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 1.1em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 20px rgba(79, 189, 186, 0.3);
+        }
+        
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 30px rgba(79, 189, 186, 0.5);
+        }
+        
+        button:active {
+            transform: translateY(-1px);
+        }
+        
+        button:disabled {
+            background: linear-gradient(135deg, #444, #666);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .slide-number {
+            position: absolute;
+            top: 40px;
+            right: 40px;
+            color: #666;
+            font-size: 1.3em;
+            font-weight: 300;
+        }
+        
+        .logo {
+            position: absolute;
+            bottom: 40px;
+            right: 40px;
+            font-size: 0.9em;
+            color: #555;
+            font-weight: 300;
+        }
+        
+        .key-findings {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 50px;
+            margin-top: 50px;
+        }
+        
+        .finding-box {
+            background: linear-gradient(135deg, rgba(79, 189, 186, 0.1) 0%, rgba(79, 189, 186, 0.05) 100%);
+            padding: 40px;
+            border-radius: 20px;
+            border-left: 5px solid #4fbdba;
+            transition: all 0.3s ease;
+        }
+        
+        .finding-box:hover {
+            transform: translateX(10px);
+            box-shadow: 0 10px 30px rgba(79, 189, 186, 0.2);
+        }
+        
+        .price-chart {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-around;
+            height: 350px;
+            margin: 50px 0;
+            padding: 20px;
+            background: rgba(255,255,255,0.02);
+            border-radius: 15px;
+        }
+        
+        .price-bar {
+            width: 100px;
+            background: linear-gradient(to top, #e94560, #ff6b6b);
+            border-radius: 15px 15px 0 0;
+            position: relative;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            margin: 0 10px;
+        }
+        
+        .price-bar:hover {
+            transform: scaleY(1.1);
+            box-shadow: 0 -10px 30px rgba(233, 69, 96, 0.4);
+        }
+        
+        .price-label {
+            position: absolute;
+            bottom: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.9em;
+            white-space: nowrap;
+            color: #aaa;
+        }
+        
+        .price-value {
+            position: absolute;
+            top: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-weight: bold;
+            font-size: 1.2em;
+            color: #ff6b6b;
+        }
+        
+        .timeline {
+            position: relative;
+            padding: 40px 0;
+        }
+        
+        .timeline-item {
+            display: flex;
+            align-items: center;
+            margin: 30px 0;
+            opacity: 0;
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+        
+        .timeline-year {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #4fbdba;
+            min-width: 100px;
+        }
+        
+        .timeline-bar {
+            flex-grow: 1;
+            height: 40px;
+            background: linear-gradient(90deg, #4fbdba, #7ec8e3);
+            border-radius: 0 10px 10px 0;
+            margin-left: 20px;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        
+        .timeline-bar:hover {
+            transform: scaleX(1.05);
+        }
+        
+        .timeline-value {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: white;
+            font-weight: bold;
+        }
+        
+        .growth-indicator {
+            font-size: 1.2em;
+            color: #4fbdba;
+            text-align: center;
+            margin: 30px 0;
+        }
+        
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 30px;
+            margin: 40px 0;
+        }
+        
+        .feature-card {
+            background: rgba(255,255,255,0.05);
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .feature-card:hover {
+            background: rgba(79, 189, 186, 0.1);
+            transform: translateY(-5px);
+        }
+        
+        .feature-icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+        }
+        
+        @media (max-width: 1024px) {
+            .slide {
+                padding: 60px 40px;
+            }
+            
+            h1 { font-size: 3em; }
+            h2 { font-size: 2.5em; }
+            h3 { font-size: 1.6em; }
+            
+            .key-findings {
+                grid-template-columns: 1fr;
+                gap: 30px;
+            }
+            
+            .feature-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .slide {
+                padding: 40px 20px;
+                width: 95%;
+            }
+            
+            h1 { font-size: 2.5em; }
+            h2 { font-size: 2em; }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .price-chart {
+                flex-wrap: wrap;
+                height: auto;
+            }
+            
+            .feature-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="presentation-container">
+        <!-- Slajd 1: Tytuł -->
+        <div class="slide active">
+            <div class="slide-number">1 / 15</div>
+            <div style="display: flex; flex-direction: column; justify-content: center; height: 100%;">
+                <h1>Analiza rynku Airbnb w Winnipeg</h1>
+                <p style="text-align: center; font-size: 1.8em; color: #7ec8e3; margin-top: 40px;">
+                    Kompleksowa analiza danych z platformy Airbnb
+                </p>
+                <div style="text-align: center; margin-top: 60px;">
+                    <div class="feature-grid" style="max-width: 800px; margin: 0 auto;">
+                        <div class="feature-card">
+                            <div class="feature-icon">📊</div>
+                            <div>1,626 ofert</div>
+                        </div>
+                        <div class="feature-card">
+                            <div class="feature-icon">📍</div>
+                            <div>35 dzielnic</div>
+                        </div>
+                        <div class="feature-card">
+                            <div class="feature-icon">📈</div>
+                            <div>79 zmiennych</div>
+                        </div>
+                    </div>
+                </div>
+                <p style="text-align: center; margin-top: 60px; color: #aaa;">
+                    <strong>Autor:</strong> Karol Wilczyński<br>
+                    <strong>Data:</strong> 14 czerwca 2025<br>
+                    <strong>Przedmiot:</strong> Analiza danych w języku R
+                </p>
+            </div>
+            <div class="logo">Analiza danych w R</div>
+        </div>
+
+        <!-- Slajd 2: Wprowadzenie i metodologia -->
+        <div class="slide">
+            <div class="slide-number">2 / 15</div>
+            <h2>Cel i metodologia analizy</h2>
+            <div class="content">
+                <h3>Główne cele projektu:</h3>
+                <ul>
+                    <li>Przeprowadzenie pełnej analizy eksploracyjnej danych (EDA)</li>
+                    <li>Identyfikacja kluczowych wzorców rynku wynajmu</li>
+                    <li>Analiza czynników wpływających na cenę</li>
+                    <li>Segmentacja gospodarzy i ofert</li>
+                    <li>Wizualizacja geograficzna i czasowa</li>
+                </ul>
+                
+                <h3 style="margin-top: 40px;">Zastosowane metody:</h3>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-number">MICE</div>
+                        <div class="stat-label">Imputacja braków</div>
+                        <div class="stat-sublabel">Multivariate Imputation by Chained Equations</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">k-means</div>
+                        <div class="stat-label">Segmentacja</div>
+                        <div class="stat-sublabel">Grupowanie gospodarzy w 4 klastry</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">Korelacja</div>
+                        <div class="stat-label">Analiza zależności</div>
+                        <div class="stat-sublabel">Pearson & Spearman</div>
+                    </div>
+                </div>
+            </div>
+            <div class="logo">Analiza danych w R</div>
+        </div>
+
+        <!-- Slajd 3: Przegląd danych -->
+        <div class="slide">
+            <div class="slide-number">3 / 15</div>
+            <h2>Charakterystyka zbioru danych</h2>
+            <div class="content">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-number">1,626</div>
+                        <div class="stat-label">Liczba ofert</div>
+                        <div class="stat-sublabel">Stan na 7 marca 2025</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">79</div>
+                        <div class="stat-label">Zmiennych w zbiorze</div>
+                        <div class="stat-sublabel">Po wstępnej selekcji</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">4.2 MB</div>
+                        <div class="stat-label">Rozmiar danych</div>
+                        <div class="stat-sublabel">Format CSV</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">< 2 sek</div>
+                        <div class="stat-label">Czas analizy</div>
+                        <div class="stat-sublabel">Pełne przetworzenie</div>
+                    </div>
+                </div>
+                
+                <h3 style="margin-top: 50px;">Kluczowe zmienne analizowane:</h3>
+                <div class="chart-container">
+                    <p style="font-size: 1.1em; line-height: 2;">
+                        <span class="highlight">Cenowe:</span> price, cleaning_fee, security_deposit<br>
+                        <span class="highlight">Lokalizacyjne:</span> neighbourhood_cleansed, latitude, longitude<br>
+                        <span class="highlight">Opisowe:</span> property_type, room_type, accommodates, bedrooms, bathrooms<br>
+                        <span class="highlight">Jakościowe:</span> review_scores_rating, review_scores_cleanliness, is_superhost
+                    </p>
+                </div>
+            </div>
+            <div class="logo">Analiza danych w R</div>
+        </div>
+
+        <!-- Slajd 4: Struktura rynku -->
+        <div class="slide">
+            <div class="slide-number">4 / 15</div>
+            <h2>Struktura rynku</h2>
+            <div class="content">
+                <div class="key-findings">
+                    <div class="finding-box">
+                        <h3>Typy ofert</h3>
+                        <div class="chart-container">
+                            <div class="bar-label">
+                                <span>Całe mieszkanie/apt</span>
+                                <span class="highlight">72.4%</span>
+                            </div>
+                            <div class="bar" style="width: 72.4%;"></div>
+                            
+                            <div class="bar-label" style="margin-top: 20px;">
+                                <span>Pokój prywatny</span>
+                                <span class="highlight">27.6%</span>
+                            </div>
+                            <div class="bar" style="width: 27.6%;"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="finding-box">
+                        <h3>Struktura gospodarzy</h3>
+                        <div class="chart-container">
+                            <div class="bar-label">
+                                <span>Zwykli gospodarze</span>
+                                <span class="highlight">59.5%</span>
+                            </div>
+                            <div class="bar" style="width: 59.5%;"></div>
+                            
+                            <div class="bar-label" style="margin-top: 20px;">
+                                <span>Superhości</span>
+                                <span class="highlight">40.5%</span>
+                            </div>
+                            <div class="bar" style="width: 40.5%;"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <h3 style="margin-top: 50px; text-align: center;">Koncentracja rynku</h3>
+                <div class="stats-grid" style="margin-top: 30px;">
+                    <div class="stat-card">
+                        <div class="stat-number">70.8%</div>
+                        <div class="stat-label">gospodarzy ma tylko 1 ofertę</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">824</div>
+                        <div class="stat-label">unikalnych gospodarzy</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">5 osób</div>
+                        <div class="stat-label">kontroluje >30% ofert</div>
+                    </div>
+                </div>
+            </div>
+            <div class="logo">Analiza danych w R</div>
+        </div>
+
+        <!-- Slajd 5: Analiza cenowa szczegółowa -->
+        <div class="slide">
+            <div class="slide-number">5 / 15</div>
+            <h2>Analiza cenowa - podstawowe statystyki</h2>
+            <div class="content">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-number">$121.61</div>
+                        <div class="stat-label">Średnia cena/noc</div>
+                        <div class="stat-sublabel">Znacznie wyższa od mediany</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">$89.00</div>
+                        <div class="stat-label">Mediana ceny/noc</div>
+                        <div class="stat-sublabel">Bardziej reprezentatywna</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">$64-$124</div>
+                        <div class="stat-label">Rozstęp międzykwartylowy</div>
+                        <div class="stat-sublabel">50% ofert w tym zakresie</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">276.55</div>
+                        <div class="stat-label">Odchylenie standardowe</div>
+                        <div class="stat-sublabel">Bardzo duże zróżnicowanie</div>
+                    </div>
+                </div>
+                
+                <h3 style="margin-top: 50px;">Rozkład cen - silnie prawostronnie skośny</h3>
+                <div class="chart-container">
+                    <p style="text-align: center; font-size: 1.2em; margin: 30px 0;">
+                        <span class="highlight">Skośność: 16.25</span> | <span class="highlight">Kurtoza: 292.77</span><br>
+                        <small style="color: #888;">Wskazuje na obecność znaczących outlierów</small>
+                    </p>
+                </div>
+            </div>
+            <div class="logo">Analiza danych w R</div>
+        </div>
+
+        <!-- Slajd 6: Geografia cen -->
+        <div class="slide">
+            <div class="slide-number">6 / 15</div>
+            <h2>Geografia cen - najdroższe dzielnice</h2>
+            <div class="content">
+                <div class="price-chart">
+                    <div class="price-bar" style="height: 100%;">
+                        <div class="price-value">$161</div>
+                        <div class="price-label">Old Kildonan</div>
+                    </div>
+                    <div class="price-bar" style="height: 88%;">
+                        <div class="price-value">$141</div>
+                        <div class="price-label">River Heights</div>
+                    </div>
+                    <div class="price-bar" style="height: 74%;">
+                        <div class="price-value">$119</div>
+                        <div class="price-label">Point Douglas</div>
+                    </div>
+                    <div class="price-bar" style="height: 72%;">
+                        <div class="price-value">$116</div>
+                        <div class="price-label">Charleswood</div>
+                    </div>
+                    <div class="price-bar" style="height: 71%;">
+                        <div class="price-value">$115</div>
+                        <div class="price-label">St. Boniface</div>
+                    </div>
+                    <div class="price-bar" style="height: 47%;">
+                        <div class="price-value">$76</div>
+                        <div class="price-label">Transcona</div>
+                    </div>
+                </div>
+                
+                <div class="growth-indicator">
+                    Różnica między najdroższą a najtańszą dzielnicą: <span class="highlight">112%</span>
+                </div>
+            </div>
+            <div class="logo">Analiza danych w R</div>
+        </div>
+
+        <!-- Slajd 7: Koncentracja geograficzna -->
+        <div class="slide">
+            <div class="slide-number">7 / 15</div>
+            <h2>Koncentracja ofert w dzielnicach</h2>
+            <div class="content">
+                <h3>Top 5 dzielnic pod względem liczby ofert:</h3>
+                <div class="timeline">
+                    <div class="timeline-item" style="animation-delay: 0.1s;">
+                        <div class="timeline-year">Waverley West</div>
+                        <div class="timeline-bar" style="width: 60%;">
+                            <div class="timeline-value">205 ofert</div>
+                        </div>
+                    </div>
+                    <div class="timeline-item" style="animation-delay: 0.2s;">
+                        <div class="timeline-year">Fort Rouge</div>
+                        <div class="timeline-bar" style="width: 58%;">
+                            <div class="timeline-value">199 ofert</div>
+                        </div>
+                    </div>
+                    <div class="timeline-item" style="animation-delay: 0.3s;">
+                        <div class="timeline-year">St. Vital</div>
+                        <div class="timeline-bar" style="width: 49%;">
+                            <div class="timeline-value">167 ofert</div>
+                        </div>
+                    </div>
+                    <div class="timeline-item" style="animation-delay: 0.4s;">
+                        <div class="timeline-year">Daniel McIntyre</div>
+                        <div class="timeline-bar" style="width: 44%;">
+                            <div class="timeline-value">151 ofert</div>
+                        </div>
+                    </div>
+                    <div class="timeline-item" style="animation-delay: 0.5s;">
+                        <div class="timeline-year">Point Douglas</div>
+                        <div class="timeline-bar" style="width: 31%;">
+                            <div class="timeline-value">106 ofert</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="background: rgba(79, 189, 186, 0.1); padding: 30px; border-radius: 15px; margin-top: 40px;">
+                    <p style="text-align: center; font-size: 1.2em;">
+                        Top 15 dzielnic skupia <span class="highlight">85%</span> wszystkich ofert Airbnb w Winnipeg
+                    </p>
+                </div>
+            </div>
+            <div class="logo">Analiza danych w R</div>
+        </div>
+
+        <!-- Slajd 8: Czynniki wpływające na cenę -->
+        <div class="slide">
+            <div class="slide-number">8 / 15</div>
+            <h2>Czynniki wpływające na cenę</h2>
+            <div class="content">
+                <h3>Najsilniejsze korelacje z ceną:</h3>
+                <div class="chart-container">
+                    <div class="bar-label">
+                        <span>Liczba osób (accommodates)</span>
+                        <span class="highlight">r = 0.549</span>
+                    </div>
+                    <div class="bar" style="width: 54.9%;"></div>
+                    
+                    <div class="bar-label" style="margin-top: 15px;">
+                        <span>Liczba sypialni</span>
+                        <span class="highlight">r = 0.539</span>
+                    </div>
+                    <div class="bar" style="width: 53.9%;"></div>
+                    
+                    <div class="bar-label" style="margin-top: 15px;">
+                        <span>Liczba łazienek</span>
+                        <span class="highlight">r = 0.504</span>
+                    </div>
+                    <div class="bar" style="width: 50.4%;"></div>
+                    
+                    <div class="bar-label" style="margin-top: 15px;">
+                        <span>Liczba łóżek</span>
+                        <span class="highlight">r = 0.488</span>
+                    </div>
+                    <div class="bar" style="width: 48.8%;"></div>
+                </div>
+                
+                <h3 style="margin-top: 50px;">Wpływ słów kluczowych w nazwie oferty:</h3>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-number">+$57</div>
+                        <div class="stat-label">"garden"</div>
+                        <div class="stat-sublabel">+54% vs średnia</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">+$33</div>
+                        <div class="stat-label">"luxury"</div>
+                        <div class="stat-sublabel">+32% vs średnia</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">+$24</div>
+                        <div class="stat-label">"spacious"</div>
+                        <div class="stat-sublabel">+23% vs średnia</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">+$17</div>
+                        <div class="stat-label">"parking"</div>
+                        <div class="stat-sublabel">+16% vs średnia</div>
+                    </div>
+                </div>
+            </div>
+            <div class="logo">Analiza danych w R</div>
+        </div>
+
+        <!-- Slajd 9: Segmentacja gospodarzy -->
+        <div class="slide">
+            <div class="slide-number">9 / 15</div>
+            <h2>Segmentacja gospodarzy (k-means)</h2>
+            <div class="content">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-number">86.4%</div>
+                        <div class="stat-label">Segment Standard</div>
+                        <p style="margin-top: 15px; font-size: 0.9em; color: #aaa; text-align: left;">
+                            • Średnia cena: $88<br>
+                            • 1-2 oferty<br>
+                            • 44.5% to superhości<br>
+                            • Ocena: 4.83/5
+                        </p>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">9.7%</div>
+                        <div class="stat-label">Segment Premium</div>
+                        <p style="margin-top: 15px; font-size: 0.9em; color: #aaa; text-align: left;">
+                            • Średnia cena: $279<br>
+                            • Wysokiej jakości<br>
+                            • 38.8% to superhości<br>
+                            • Ocena: 4.90/5
+                        </p>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">3.3%</div>
+                        <div class="stat-label">Niska jakość</div>
+                        <p style="margin-top: 15px; font-size: 0.9em; color: #aaa; text-align: left;">
+                            • Średnia cena: $71<br>
+                            • Niska ocena: 3.73/5<br>
+                            • 0% superhostów<br>
+                            • Często nieaktywni
+                        </p>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">0.6%</div>
+                        <div class="stat-label">Mega-gracze</div>
+                        <p style="margin-top: 15px; font-size: 0.9em; color: #aaa; text-align: left;">
+                            • Średnia cena: $113<br>
+                            • 20-50 ofert<br>
+                            • 20% to superhości<br>
+                            • Profesjonalni wynajmujący
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="logo">Analiza danych w R</div>
+        </div>
+
+        <!-- Slajd 10: Jakość danych -->
+        <div class="slide">
+            <div class="slide-number">10 / 15</div>
+            <h2>Jakość danych i proces czyszczenia</h2>
+            <div class="content">
+                <h3>Analiza braków danych:</h3>
+                <div class="key-findings">
+                    <div class="finding-box">
+                        <h3>Przed czyszczeniem</h3>
+                        <ul>
+                            <li><span class="highlight">23 zmienne</span> z brakami</li>
+                            <li>neighbourhood_group_cleansed: <span class="highlight">100%</span> braków</li>
+                            <li>calendar_updated: <span class="highlight">100%</span> braków</li>
+                            <li>license: <span class="highlight">58.1%</span> braków</li>
+                            <li>host_about: <span class="highlight">54.9%</span> braków</li>
+                        </ul>
+                    </div>
+                    <div class="finding-box">
+                        <h3>Po czyszczeniu</h3>
+                        <ul>
+                            <li><span class="highlight">1,453 obserwacji</span> (89.4%)</li>
+                            <li>Usunięto <span class="highlight">173 wiersze</span> (10.6%)</li>
+                            <li>Imputacja MICE w <span class="highlight">2.3 sekundy</span></li>
+                            <li>Przycięto <span class="highlight">outliers</span> (1% i 99%)</li>
+                            <li>Znormalizowano <span class="highlight">8 zmiennych</span></li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 40px; text-align: center;">
+                    <p style="font-size: 1.2em;">
+                        Metoda MICE pozwoliła zachować <span class="highlight">89.4%</span> oryginalnych danych
+                        przy jednoczesnym uzupełnieniu wszystkich braków
+                    </p>
+                </div>
+            </div>
+            <div class="logo">Analiza danych w R</div>
+        </div>
+
+        <!-- Slajd 11: Trendy czasowe - POPRAWIONY -->
+        <div class="slide">
+            <div class="slide-number">11 / 15</div>
+            <h2>Rozwój rynku w czasie</h2>
+            <div class="content">
+                <h3>Dynamika wzrostu liczby nowych gospodarzy:</h3>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-number">2010: 4</div>
+                        <div class="stat-label">Pierwsi gospodarze</div>
+                        <div class="stat-sublabel">Początek Airbnb w Winnipeg</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">2015: 83</div>
+                        <div class="stat-label">Boom wzrostowy</div>
+                        <div class="stat-sublabel">Nowi gospodarze/rok</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">2020: 46</div>
+                        <div class="stat-label">Spadek (COVID)</div>
+                        <div class="stat-sublabel">Nowi gospodarze/rok</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">2024: 111</div>
+                        <div class="stat-label">Powrót do wzrostu</div>
+                        <div class="stat-sublabel">Rekordowy rok</div>
+                    </div>
+                </div>
+                
+                <h3 style="margin-top: 40px;">Aktywność ofert:</h3>
+                <div class="chart-container">
+                    <div style="display: flex; justify-content: space-around; align-items: center;">
+                        <div style="text-align: center;">
+                            <div style="font-size: 3em; color: #4fbdba; font-weight: bold;">66.2%</div>
+                            <div>Ofert aktywnych<br>w ostatnich 6 mies.</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="font-size: 3em; color: #ff6b6b; font-weight: bold;">33.8%</div>
+                            <div>Ofert nieaktywnych</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="background: rgba(79, 189, 186, 0.1); padding: 20px; border-radius: 15px; margin-top: 30px;">
+                    <p style="text-align: center;">
+                        <span class="highlight">Łącznie 824</span> unikalnych gospodarzy działało na rynku od 2010 roku
+                    </p>
+                </div>
+            </div>
+            <div class="logo">Analiza danych w R</div>
+        </div>
+
+        <!-- Slajd 12: Analiza przychodów -->
+        <div class="slide">
+            <div class="slide-number">12 / 15</div>
+            <h2>Analiza przychodów</h2>
+            <div class="content">
+                <h3>Szacowane przychody roczne:</h3>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-number">$6,453</div>
+                        <div class="stat-label">Średni przychód/rok</div>
+                        <div class="stat-sublabel">Na gospodarza</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">$2,244</div>
+                        <div class="stat-label">Mediana przychodu</div>
+                        <div class="stat-sublabel">Bardziej typowa wartość</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">$9.4M</div>
+                        <div class="stat-label">Łączny rynek</div>
+                        <div class="stat-sublabel">Wszystkie oferty</div>
+                    </div>
+                </div>
+                
+                <h3 style="margin-top: 40px;">Struktura przychodów:</h3>
+                <div class="chart-container">
+                    <div class="bar-label">
+                        <span>< $5k/rok</span>
+                        <span class="highlight">63.6%</span>
+                    </div>
+                    <div class="bar" style="width: 63.6%;"></div>
+                    
+                    <div class="bar-label" style="margin-top: 15px;">
+                        <span>$5k-10k/rok</span>
+                        <span class="highlight">13.4%</span>
+                    </div>
+                    <div class="bar" style="width: 13.4%;"></div>
+                    
+                    <div class="bar-label" style="margin-top: 15px;">
+                        <span>$10k-20k/rok</span>
+                        <span class="highlight">13.9%</span>
+                    </div>
+                    <div class="bar" style="width: 13.9%;"></div>
+                    
+                    <div class="bar-label" style="margin-top: 15px;">
+                        <span>> $20k/rok</span>
+                        <span class="highlight">9.1%</span>
+                    </div>
+                    <div class="bar" style="width: 9.1%;"></div>
+                </div>
+            </div>
+            <div class="logo">Analiza danych w R</div>
+        </div>
+
+        <!-- Slajd 13: Kluczowe wnioski -->
+        <div class="slide">
+            <div class="slide-number">13 / 15</div>
+            <h2>Kluczowe wnioski z analizy</h2>
+            <div class="content">
+                <div class="key-findings">
+                    <div class="finding-box">
+                        <h3>Dla gospodarzy</h3>
+                        <ul>
+                            <li>Lokalizacja może wpłynąć na cenę o <span class="highlight">50-100%</span></li>
+                            <li>Inwestycja w jakość i wyposażenie się opłaca</li>
+                            <li>Każda dodatkowa sypialnia to <span class="highlight">+$50-60</span></li>
+                            <li>Słowa kluczowe w opisie mają znaczenie</li>
+                            <li>Bycie superhostem zwiększa konkurencyjność</li>
+                        </ul>
+                    </div>
+                    <div class="finding-box">
+                        <h3>Dla analityków rynku</h3>
+                        <ul>
+                            <li>Widoczna <span class="highlight">koncentracja rynku</span></li>
+                            <li>Sezonowość wpływa na ceny i aktywność</li>
+                            <li>Jakość danych wymaga ciągłej poprawy</li>
+                            <li>Rynek powraca do wzrostu po pandemii</li>
+                            <li>Profesjonalizacja rynku postępuje</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div style="background: linear-gradient(135deg, rgba(233, 69, 96, 0.1), rgba(79, 189, 186, 0.1)); padding: 40px; border-radius: 20px; margin-top: 50px; text-align: center;">
+                    <p style="font-size: 1.3em; line-height: 1.8;">
+                        Rynek Airbnb w Winnipeg charakteryzuje się <span class="highlight">wysokim zróżnicowaniem</span>,
+                        <span class="highlight">rosnącą konkurencją</span> oraz postępującą <span class="highlight">profesjonalizacją</span>,
+                        przy jednoczesnej dominacji małych, indywidualnych gospodarzy.
+                    </p>
+                </div>
+            </div>
+            <div class="logo">Analiza danych w R</div>
+        </div>
+
+        <!-- Slajd 14: Rekomendacje -->
+        <div class="slide">
+            <div class="slide-number">14 / 15</div>
+            <h2>Rekomendacje</h2>
+            <div class="content">
+                <h3>Dla nowych gospodarzy:</h3>
+                <ul>
+                    <li>Wybierz lokalizację w <span class="highlight">River Heights</span> lub <span class="highlight">Old Kildonan</span> dla wyższych cen</li>
+                    <li>Zainwestuj w <span class="highlight">dodatkową sypialnię</span> - ROI około 50-60$/noc</li>
+                    <li>Używaj słów kluczowych: <span class="highlight">"garden", "luxury", "spacious"</span></li>
+                    <li>Dąż do statusu <span class="highlight">Superhosta</span> - 40.5% rynku to superhości</li>
+                    <li>Rozważ ofertę <span class="highlight">całego mieszkania</span> - 72.4% rynku</li>
+                </ul>
+                
+                <h3 style="margin-top: 40px;">Dla platformy Airbnb:</h3>
+                <ul>
+                    <li>Wymagaj uzupełnienia <span class="highlight">kluczowych danych</span> (licencje, opisy)</li>
+                    <li>Monitoruj <span class="highlight">koncentrację rynku</span> - 5 osób kontroluje >30%</li>
+                    <li>Wspieraj <span class="highlight">małych gospodarzy</span> - stanowią 70.8% rynku</li>
+                    <li>Rozważ <span class="highlight">limity ofert</span> dla mega-graczy</li>
+                </ul>
+            </div>
+            <div class="logo">Analiza danych w R</div>
+        </div>
+
+        <!-- Slajd 15: Podziękowania -->
+        <div class="slide">
+            <div class="slide-number">15 / 15</div>
+            <div style="display: flex; flex-direction: column; justify-content: center; height: 100%; text-align: center;">
+                <h1>Dziękuję za uwagę!</h1>
+                <p style="font-size: 1.8em; color: #7ec8e3; margin-top: 50px;">
+                    Pytania i dyskusja
+                </p>
+                <div style="margin-top: 80px;">
+                    <p style="color: #aaa; font-size: 1.2em;">
+                        <strong>Kontakt:</strong><br>
+                        Karol Wilczyński<br>
+                        Analiza danych w języku R<br>
+                        14 czerwca 2025
+                    </p>
+                </div>
+                <div style="margin-top: 50px;">
+                    <p style="color: #666;">
+                        Pełny kod analizy dostępny w repozytorium projektu
+                    </p>
+                </div>
+            </div>
+            <div class="logo">Analiza danych w R</div>
+        </div>
+    </div>
+
+    <!-- Nawigacja -->
+    <div class="navigation">
+        <button id="prevBtn" onclick="changeSlide(-1)">← Poprzedni</button>
+        <button id="nextBtn" onclick="changeSlide(1)">Następny →</button>
+    </div>
+
+    <script>
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const totalSlides = slides.length;
+
+        function showSlide(n) {
+            slides.forEach(slide => slide.classList.remove('active'));
+            
+            if (n >= totalSlides) {
+                currentSlide = totalSlides - 1;
+            } else if (n < 0) {
+                currentSlide = 0;
+            } else {
+                currentSlide = n;
+            }
+            
+            slides[currentSlide].classList.add('active');
+            
+            // Aktualizacja przycisków
+            document.getElementById('prevBtn').disabled = currentSlide === 0;
+            document.getElementById('nextBtn').disabled = currentSlide === totalSlides - 1;
+        }
+
+        function changeSlide(direction) {
+            showSlide(currentSlide + direction);
+        }
+
+        // Obsługa klawiszy
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft') changeSlide(-1);
+            if (e.key === 'ArrowRight') changeSlide(1);
+            if (e.key === 'f' || e.key === 'F') {
+                document.documentElement.requestFullscreen();
+            }
+            if (e.key === 'Escape') {
+                document.exitFullscreen();
+            }
+        });
+
+        // Inicjalizacja
+        showSlide(0);
+    </script>
+</body>
+</html>
